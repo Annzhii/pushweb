@@ -32,7 +32,7 @@ def save_push_subscription(subscription):
     doc.insert(ignore_permissions=True)
     return doc.name
 
-
+@frappe.whitelist()
 def send_push_to_user(user, title, body, url=None):
     subs = frappe.get_all("Push Subscription", filters={"user": user, "enabled": 1}, fields=["raw", "name"])
     vapid_priv = frappe.get_site_config().get("vapid_private_key")
