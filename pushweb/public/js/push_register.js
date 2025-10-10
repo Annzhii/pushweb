@@ -15,18 +15,37 @@ async function registerPush() {
     return;
   }
 
-  const reg = await navigator.serviceWorker.register(
-    '/assets/pushweb/service-worker.js',
-  );
-  const sub = await reg.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: urlBase64ToUint8Array(key),
-  });
+  try {
+    // 注册 service worker
+    await navigator.serviceWorker.register('/assets/pushweb/service-worker.js');
+    console.log('SW registered');
 
-  await frappe.call({
-    method: 'pushweb.api.push.save_push_subscription',
-    args: { subscription: JSON.stringify(sub) },
-  });
+    // 等待 2 秒，让 SW 激活
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    console.log('Waited 2 seconds, proceed to subscribe');
 
-  frappe.show_alert({ message: 'Push notification enabled!', indicator: 'green' });
+    // 获取 registration（确保 SW 已经注册）
+    const registration = await navigator.serviceWorker.getRegistration('/assets/pushweb/service-worker.js');
+    if (!registration) {
+      throw new Error('Service Worker registration not found');
+    }
+
+    // 订阅 push
+    const sub = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(key),
+    });
+
+    // 保存订阅
+    await frappe.call({
+      method: 'pushweb.api.push.save_push_subscription',
+      args: { subscription: JSON.stringify(sub) },
+    });
+
+    frappe.show_alert({ message: 'Push notification enabled!', indicator: 'green' });
+
+  } catch (err) {
+    console.error('Push registration failed', err);
+    frappe.msgprint('Push registration failed: ' + err.message);
+  }
 }

@@ -1,5 +1,5 @@
 self.addEventListener('push', function(event) {
-  console.log('xxxxxx[Service Worker] Push Received.');
+  console.log('[Service Worker] Push Received.');
   let data = {};
   try {
     data = event.data.json();
