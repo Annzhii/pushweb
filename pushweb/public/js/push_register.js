@@ -1,9 +1,6 @@
-function urlBase64ToUint8Array(base64String) {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const rawData = window.atob(base64);
-  return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
-}
+window.addEventListener('load', async () => {
+  await registerPush();
+});
 
 async function registerPush() {
   const vapidKey = await frappe.call('pushweb.api.push.get_vapid_public_key');
@@ -48,4 +45,11 @@ async function registerPush() {
     console.error('Push registration failed', err);
     frappe.msgprint('Push registration failed: ' + err.message);
   }
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
 }
