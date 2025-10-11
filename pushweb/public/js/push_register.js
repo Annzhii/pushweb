@@ -3,6 +3,10 @@ window.addEventListener('load', async () => {
 });
 
 async function registerPush() {
+  const registration = await navigator.serviceWorker.getRegistration('/assets/pushweb/service-worker.js');
+  if (registration){
+    return
+  }
   const vapidKey = await frappe.call('pushweb.api.push.get_vapid_public_key');
   const key = vapidKey.message;
 
