@@ -7,7 +7,7 @@ def get_vapid_public_key():
     return frappe.get_site_config().get("vapid_public_key")
 
 @frappe.whitelist()
-def save_push_subscription(subscription):
+def save_push_subscription(from_app, subscription):
     if isinstance(subscription, str):
         subscription = json.loads(subscription)
     endpoint = subscription.get('endpoint')
@@ -15,13 +15,22 @@ def save_push_subscription(subscription):
     if not endpoint:
         frappe.throw(_('Invalid subscription'))
 
-    existing = frappe.db.exists("Push Subscription", {"endpoint": endpoint})
+    if from_app == 'erp':
+        subscription_type = "Push Subscription"
+    elif from_app == 'crm':
+        subscription_type = "Push Subscription CRM"
+    elif from_app == 'raven':
+        subscription_type = "Push Subscription Raven"
+    else:
+        frappe.throw(_('Invalid app type: {0}').format(from_app))
+
+    existing = frappe.db.exists(subscription_type, {"endpoint": endpoint})
     if existing:
-        frappe.db.set_value("Push Subscription", existing, "raw", json.dumps(subscription))
+        frappe.db.set_value(subscription_type, existing, "raw", json.dumps(subscription))
         return existing
 
     doc = frappe.get_doc({
-        "doctype": "Push Subscription",
+        "doctype": subscription_type,
         "user": frappe.session.user,
         "endpoint": endpoint,
         "p256dh": keys.get('p256dh'),
@@ -33,8 +42,17 @@ def save_push_subscription(subscription):
     return doc.name
 
 @frappe.whitelist()
-def send_push_to_user(user, title, body, url=None):
-    subs = frappe.get_all("Push Subscription", filters={"user": user, "enabled": 1}, fields=["raw", "name"])
+def send_push_to_user(to_app, user, title, body, url=None):
+    if to_app == 'erp':
+        subscription_type = "Push Subscription"
+    elif to_app == 'crm':
+        subscription_type = "Push Subscription CRM"
+    elif to_app == 'raven':
+        subscription_type = "Push Subscription Raven"
+    else:
+        frappe.throw(_('Invalid app type: {0}').format(to_app))
+
+    subs = frappe.get_all(subscription_type, filters={"user": user, "enabled": 1}, fields=["raw", "name"])
     vapid_priv = frappe.get_site_config().get("vapid_private_key")
     vapid_claims = {"sub": "mailto:admin@yourdomain.com"}
 
@@ -49,4 +67,3 @@ def send_push_to_user(user, title, body, url=None):
             )
         except WebPushException as e:
             frappe.db.set_value("Push Subscription", s["name"], "enabled", 0)
-            frappe.log_error(f"Push failed for {user}: {e}")

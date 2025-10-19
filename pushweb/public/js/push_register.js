@@ -1,12 +1,12 @@
-window.addEventListener('load', async () => {
-  await registerPush();
-});
+//window.addEventListener('load', async () => {
+//  await registerPush();
+//});
 
-async function registerPush() {
+async function registerPush(from_app) {
   const registration = await navigator.serviceWorker.getRegistration('/assets/pushweb/service-worker.js');
-  if (registration){
-    return
-  }
+  //if (registration){
+  //  return
+  //}
   const vapidKey = await frappe.call('pushweb.api.push.get_vapid_public_key');
   const key = vapidKey.message;
 
@@ -22,8 +22,8 @@ async function registerPush() {
     console.log('SW registered');
 
     // 等待 2 秒，让 SW 激活
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    console.log('Waited 2 seconds, proceed to subscribe');
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    //console.log('Waited 2 seconds, proceed to subscribe');
 
     // 获取 registration（确保 SW 已经注册）
     const registration = await navigator.serviceWorker.getRegistration('/assets/pushweb/service-worker.js');
@@ -40,7 +40,7 @@ async function registerPush() {
     // 保存订阅
     await frappe.call({
       method: 'pushweb.api.push.save_push_subscription',
-      args: { subscription: JSON.stringify(sub) },
+      args: { from_app: from_app, subscription: JSON.stringify(sub) },
     });
 
     frappe.show_alert({ message: 'Push notification enabled!', indicator: 'green' });
