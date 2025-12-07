@@ -22,7 +22,7 @@ async function registerPush(from_app) {
     console.log('SW registered');
 
     // 等待 2 秒，让 SW 激活
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 500));
     //console.log('Waited 2 seconds, proceed to subscribe');
 
     // 获取 registration（确保 SW 已经注册）
